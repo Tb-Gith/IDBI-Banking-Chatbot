@@ -48,9 +48,8 @@ print("Total stored chunks:", collection.count())
 api_key = os.getenv("GROQ_API_KEY")
 
 if not api_key:
-    raise ValueError(
-        "GROQ_API_KEY not found. Check your .env file."
-    )
+    import streamlit as st
+    api_key = st.secrets["GROQ_API_KEY"]
 
 llm_client = OpenAI(
     base_url="https://api.groq.com/openai/v1",
