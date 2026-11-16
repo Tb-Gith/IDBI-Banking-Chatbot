@@ -9,7 +9,7 @@ from chatbot import ask_idbi_chatbot
 
 st.set_page_config(
     page_title="IDBI Bank AI Assistant",
-    page_icon="C:\\Users\\tharu\\Documents\\idbi bank logo.png",
+    page_icon="C:\\Users\\tharu\\Documents\\IDBI_LOGO.png",
     layout="centered"
 )
 
@@ -31,7 +31,7 @@ with st.sidebar:
     col1, col2 = st.columns([1, 7])
 
 with col1:
-    st.image("assets/idbi_logo.png", width=240)
+    st.image("assets/IDBI_LOGO.png", width=240)
 
 with col2:
     st.title("IDBI Bank AI Assistant")
@@ -64,7 +64,7 @@ with col2:
 col1, col2 = st.columns([2, 6], vertical_alignment="center")
 
 with col1:
-    st.image("assets/idbi_logo.png", width=160)
+    st.image("assets/IDBI_LOGO.png", width=160)
 
 with col2:
     st.title("IDBI Bank AI Assistant")
