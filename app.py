@@ -1,3 +1,5 @@
+import re
+import html
 
 import streamlit as st
 from chatbot import ask_idbi_chatbot
@@ -9,9 +11,27 @@ from chatbot import ask_idbi_chatbot
 
 st.set_page_config(
     page_title="IDBI Bank AI Assistant",
-    page_icon="C:\\Users\\tharu\\Documents\\IDBI_LOGO.png",
+    page_icon="assets/IDBI_LOGO.png",
     layout="centered"
 )
+
+
+# ==========================================
+# RESPONSE FORMATTING
+# ==========================================
+
+def format_response(response):
+    """Clean common HTML artifacts before rendering Markdown."""
+    if not response:
+        return ""
+
+    response = html.unescape(str(response))
+    response = re.sub(r"(?i)<br\\s*/?>", "\\n", response)
+    response = re.sub(r"(?i)</?p\\s*>", "\\n", response)
+    response = re.sub(r"<[^>]+>", "", response)
+    response = re.sub(r"\\n{3,}", "\\n\\n", response)
+
+    return response.strip()
 
 
 # ==========================================
@@ -27,52 +47,36 @@ if "chat_history" not in st.session_state:
 # ==========================================
 
 with st.sidebar:
-
-    col1, col2 = st.columns([1, 7])
-
-with col1:
-    st.image("assets/IDBI_LOGO.png", width=240)
-
-with col2:
+    st.image("assets/IDBI_LOGO.png", width=180)
     st.title("IDBI Bank AI Assistant")
-    st.write(
-        "Your AI-powered banking information assistant."
-    )
+    st.write("Your AI-powered banking information assistant.")
 
     st.divider()
 
     if st.button("➕ New Chat", use_container_width=True):
-
         st.session_state.chat_history = []
         st.rerun()
 
     st.divider()
-
     st.caption("Powered by Groq + RAG")
-
-    st.caption(
-        "Information is retrieved from available "
-        "IDBI Bank documents."
-    )
-
+    st.caption("Information is retrieved from available IDBI Bank documents.")
 
 
 # ==========================================
 # MAIN HEADER
 # ==========================================
 
-col1, col2 = st.columns([2, 6], vertical_alignment="center")
+col1, col2 = st.columns([1, 5], vertical_alignment="center")
 
 with col1:
-    st.image("assets/IDBI_LOGO.png", width=160)
+    st.image("assets/IDBI_LOGO.png", width=100)
 
 with col2:
     st.title("IDBI Bank AI Assistant")
 
 st.write(
     "Hello! 👋 Ask me anything about IDBI Bank's "
-    "accounts, deposits, loans, cards, charges "
-    "and banking services."
+    "accounts, deposits, loans, cards, charges and banking services."
 )
 
 st.caption(
@@ -83,31 +87,25 @@ st.caption(
 st.divider()
 
 
-
 # ==========================================
 # DISPLAY CHAT HISTORY
 # ==========================================
 
 for message in st.session_state.chat_history:
-
     if message["role"] == "Customer":
-
         with st.chat_message("user"):
             st.markdown(message["content"])
 
     elif message["role"] == "IDBI Assistant":
-
         with st.chat_message("assistant"):
-            st.markdown(message["content"])
+            st.markdown(format_response(message["content"]))
 
 
 # ==========================================
 # CHAT INPUT
 # ==========================================
 
-user_question = st.chat_input(
-    "Ask your banking question..."
-)
+user_question = st.chat_input("Ask your banking question...")
 
 
 # ==========================================
@@ -115,42 +113,27 @@ user_question = st.chat_input(
 # ==========================================
 
 if user_question:
-
-    # Display customer question
-
     with st.chat_message("user"):
         st.markdown(user_question)
 
-
-    # Generate chatbot response
-
     with st.chat_message("assistant"):
-
         with st.spinner("Finding information..."):
-
             try:
-
                 answer = ask_idbi_chatbot(
                     user_question,
                     st.session_state.chat_history
                 )
 
                 if answer:
-
-                    st.markdown(answer)
-
+                    st.markdown(format_response(answer))
                 else:
-
                     st.error(
-                        "Sorry! The banking assistant is "
-                        "temporarily unavailable. Please try again."
+                        "Sorry! The banking assistant is temporarily "
+                        "unavailable. Please try again."
                     )
 
             except Exception as e:
-
                 st.error(
-                    "Something went wrong while processing "
-                    "your question."
+                    "Something went wrong while processing your question."
                 )
-
                 st.exception(e)
