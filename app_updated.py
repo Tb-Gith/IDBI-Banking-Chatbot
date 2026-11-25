@@ -21,15 +21,24 @@ st.set_page_config(
 # ==========================================
 
 def format_response(response):
-    """Clean common HTML artifacts before rendering Markdown."""
+    """Clean HTML artifacts while preserving Markdown links."""
+
     if not response:
         return ""
 
     response = html.unescape(str(response))
-    response = re.sub(r"(?i)<br\\s*/?>", "\\n", response)
-    response = re.sub(r"(?i)</?p\\s*>", "\\n", response)
-    response = re.sub(r"<[^>]+>", "", response)
-    response = re.sub(r"\\n{3,}", "\\n\\n", response)
+
+    response = re.sub(r"(?i)<br\s*/?>", "\n", response)
+    response = re.sub(r"(?i)</?p\s*>", "\n", response)
+
+    # Remove HTML tags without removing Markdown URL syntax.
+    response = re.sub(
+        r"</?[A-Za-z][A-Za-z0-9]*(?:\s[^>]*)?>",
+        "",
+        response
+    )
+
+    response = re.sub(r"\n{3,}", "\n\n", response)
 
     return response.strip()
 

@@ -347,7 +347,7 @@ def build_sources_section(metadata_list):
     lines = ["\n\n---\n\n### Sources"]
     for (source, source_url), pages in unique_sources.items():
         page_text = ", ".join(sorted(pages, key=lambda value: (not value.isdigit(), int(value) if value.isdigit() else value)))
-        lines.append(f"- [{source}](<{source_url}>) — Page(s): {page_text}")
+        lines.append(f"- [{source}]({source_url}) — Page(s): {page_text}")
 
     return "\n".join(lines)
 
