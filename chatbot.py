@@ -325,6 +325,33 @@ What would you like to know today?
 # STEP 8: SAVE CONVERSATION
 # ==========================================
 
+def build_sources_section(metadata_list):
+    """Build clickable source links using URLs stored in ChromaDB metadata."""
+    unique_sources = {}
+
+    for metadata in metadata_list:
+        source = metadata.get("source", "IDBI Bank document")
+        page = metadata.get("page", "Unknown")
+        source_url = metadata.get("source_url")
+
+        # Do not fabricate a URL when old database metadata has no source_url.
+        if not source_url or not str(source_url).startswith("https://www.idbi.bank.in/"):
+            continue
+
+        key = (source, source_url)
+        unique_sources.setdefault(key, set()).add(str(page))
+
+    if not unique_sources:
+        return ""
+
+    lines = ["\n\n---\n\n### Sources"]
+    for (source, source_url), pages in unique_sources.items():
+        page_text = ", ".join(sorted(pages, key=lambda value: (not value.isdigit(), int(value) if value.isdigit() else value)))
+        lines.append(f"- [{source}](<{source_url}>) — Page(s): {page_text}")
+
+    return "\n".join(lines)
+
+
 def save_conversation(question, answer, chat_history):
 
     chat_history.append({
@@ -545,6 +572,8 @@ STANDALONE QUESTION:
             "Unknown"
         )
 
+        source_url = metadata.get("source_url", "")
+
         context_parts.append(
             f"""
 Information:
@@ -552,6 +581,7 @@ Information:
 
 Source document: {source}
 Page number: {page}
+Official source URL: {source_url}
 """
         )
 
@@ -622,8 +652,9 @@ IMPORTANT ANSWERING RULES:
 11. Do not translate into English unless requested.
 12. Preserve source document names and page numbers
     exactly as provided.
-13. Mention source documents and page references
-    when providing factual banking information.
+13. Do not generate URLs or a Sources section yourself.
+    Clickable source links will be added by the application
+    using the retrieved document metadata.
 14. Never invent source references.
 
 RESPONSE STYLE AND FORMATTING:
@@ -676,13 +707,21 @@ Write a clear, natural and helpful customer-facing answer:
 
 
     # --------------------------------------
-    # 12. Save conversation
+    # 12. Append clickable source links
+    # --------------------------------------
+
+    sources_section = build_sources_section(retrieved_metadata)
+    final_answer = answer + sources_section
+
+
+    # --------------------------------------
+    # 13. Save conversation
     # --------------------------------------
 
     save_conversation(
         question,
-        answer,
+        final_answer,
         chat_history
     )
 
-    return answer
+    return final_answer
