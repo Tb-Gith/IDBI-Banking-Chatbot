@@ -1,4 +1,5 @@
 import time
+from pathlib import Path
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
@@ -9,7 +10,47 @@ import pymupdf
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # STEP 1: Load all PDF documents
-documents_folder = "documents"
+BASE_DIR = Path(__file__).resolve().parent
+documents_folder = BASE_DIR / "documents"
+
+# Official IDBI Bank reference pages / PDFs mapped to the local source PDFs.
+# Where an exact public PDF URL is not available, this points to the relevant
+# official IDBI page where customers can find the current information.
+SOURCE_URLS = {
+    "IDBI_200992317558IDBI Omni Bonds 2009-10 Upper Tier II  Series III.pdf": "https://www.idbi.bank.in/regulatory-disclosures-bcsbi.aspx",
+    "IDBI_Account opening procedures.pdf": "https://www.idbi.bank.in/apply-now.aspx",
+    "IDBI_Account-Opening-Form-for-Resident-Individuals-Sole-Proprietorship-Firms.pdf": "https://www.idbi.bank.in/apply-now.aspx",
+    "IDBI_APPLICATION-FOR-LINKING-AADHAR-NUMBER-TO-BANK-ACCOUNT.pdf": "https://www.idbi.bank.in/apply-now.aspx",
+    "IDBI_Bank Loan Interest Rates & Eligibility Report.pdf": "https://www.idbi.bank.in/interest-rates.aspx",
+    "IDBI_Bank offers retail fixed deposit details.pdf": "https://www.idbi.bank.in/faq-fixed-deposit.aspx",
+    "IDBI_Bank Savings Accounts Overview.pdf": "https://www.idbi.bank.in/sabka-basic-saving-account.aspx",
+    "IDBI_Citizen-Charter.pdf": "https://www.idbi.bank.in/regulatory-disclosures-bcsbi.aspx",
+    "IDBI_Client-offer-document.pdf": "https://www.idbi.bank.in/",
+    "IDBI_Corp_Internet_Banking_User_Manual.pdf": "https://www.idbi.bank.in/idbi-bank-internet-banking.aspx",
+    "IDBI_Corporate-Current-Account.pdf": "https://www.idbi.bank.in/service-charges.aspx",
+    "IDBI_Credit_types.pdf": "https://www.idbi.bank.in/service-charges.aspx",
+    "IDBI_Credit-Card-Policy.pdf": "https://www.idbi.bank.in/service-charges.aspx",
+    "IDBI_Customer_Care_Policy.pdf": "https://www.idbi.bank.in/pdf/policy/Customer_Care_Policy.pdf",
+    "IDBI_Debit_Cards-Charges-and-Fee.pdf": "https://www.idbi.bank.in/service-charges.aspx",
+    "IDBI_DIsclosure document.pdf": "https://www.idbi.bank.in/regulatory-disclosures-bcsbi.aspx",
+    "IDBI_Gold-SOC.pdf": "https://www.idbi.bank.in/service-charges.aspx",
+    "IDBI_kyc-notice_26122014.pdf": "https://www.idbi.bank.in/apply-now.aspx",
+    "IDBI_LOAN_min_max_meanWebsite-ROI-010218.pdf": "https://www.idbi.bank.in/interest-rates.aspx",
+    "IDBI_Loan-Accounts-Structured-retail-asset-products.pdf": "https://www.idbi.bank.in/service-charges.aspx",
+    "IDBI_minbalance.pdf": "https://www.idbi.bank.in/service-charges.aspx",
+    "IDBI_Minimum Balance Requirements.pdf": "https://www.idbi.bank.in/service-charges.aspx",
+    "IDBI_Mobile-banking-manual.pdf": "https://www.idbi.bank.in/idbi-bank-mobile-banking.aspx",
+    "IDBI_Model-Deposit-Policy.pdf": "https://www.idbi.bank.in/regulatory-disclosures-bcsbi.aspx",
+    "IDBI_Personal & Corporate Banking _ MSME & Agri banking - IDBI Bank.pdf": "https://www.idbi.bank.in/",
+    "IDBI_Personal_Loan_Salaried_Individuals_Form.pdf": "https://www.idbi.bank.in/apply-now.aspx",
+    "IDBI_Policy.pdf": "https://www.idbi.bank.in/regulatory-disclosures-bcsbi.aspx",
+    "IDBI_Retail_Internet_Banking_User_Manual.pdf": "https://www.idbi.bank.in/pdf/Retail_Internet_Banking_User_Manual.pdf",
+    "IDBI_Savings-Account-Opening-Form.pdf": "https://www.idbi.bank.in/apply-now.aspx",
+    "IDBI_The eligibility requirements for an IDBI Bank credit card include the following criteria.pdf": "https://www.idbi.bank.in/service-charges.aspx",
+    "IDBI_Types of debitcrds.pdf": "https://www.idbi.bank.in/service-charges.aspx",
+    "IDBI_What documents are required to open a savings account in idbi bank.pdf": "https://www.idbi.bank.in/apply-now.aspx",
+}
+
 
 pages = []
 processed_files = []
@@ -18,7 +59,7 @@ for filename in os.listdir(documents_folder):
 
     if filename.lower().endswith(".pdf"):
 
-        pdf_path = os.path.join(documents_folder, filename)
+        pdf_path = documents_folder / filename
 
         with pymupdf.open(pdf_path) as document:
 
@@ -59,7 +100,10 @@ for page in pages:
 
         chunk_metadata.append({
             "source": page["source"],
-            "page": page["page"]
+            "page": page["page"],
+            "source_url": SOURCE_URLS.get(
+                page["source"], "https://www.idbi.bank.in/"
+            )
         })
 
 
@@ -83,7 +127,7 @@ embedding_model = SentenceTransformer("intfloat/multilingual-e5-base")
 
 # STEP 4: Create ChromaDB database
 
-chroma_client = chromadb.PersistentClient(path="./chroma_db")
+chroma_client = chromadb.PersistentClient(path=str(BASE_DIR / "chroma_db"))
 
 # Rebuild the collection when running the ingestion script again
 try:
